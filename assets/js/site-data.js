@@ -263,7 +263,7 @@ window.SITE_DATA = {
 
     news: {
       title: "News",
-      description: "",
+      description: "Recent achievements and recognitions.",
       items: [
         {
           title: "Postdoctoral Researcher at Ruhr University Bochum (ICAMS)",
