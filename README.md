@@ -1,8 +1,8 @@
 # leizhang-research.github.io
 
-Multi-page academic website for GitHub Pages.
+Personal academic website hosted on GitHub Pages.
 
-## Site structure
+## Pages
 
 - `index.html` (Bio)
 - `papers.html`
@@ -12,41 +12,58 @@ Multi-page academic website for GitHub Pages.
 - `projects.html`
 - `teaching.html`
 
-Shared assets:
+## Core files
 
-- `assets/css/site.css` for styling
-- `assets/js/site.js` for rendering
-- `assets/js/site-data.js` for all editable content
+- `assets/js/site-data.js`: all editable content (main file you update)
+- `assets/js/site.js`: rendering logic (search, theme toggle, timelines, filters)
+- `assets/css/site.css`: global styles (light/dark theme, timeline, components)
 
-## How to update content
+## Edit content (single source)
 
-Edit only this file for most updates:
+Update `assets/js/site-data.js` for:
 
-- `assets/js/site-data.js`
+- profile info
+- social links
+- CV path
+- education / experience / projects / teaching
+- papers / talks / news entries
 
-Inside it, you can change:
+### Avatar controls
 
-- Profile (name, pronouns, role, organization, avatar)
-- CV button path
-- Social links
-- Navigation labels/files
-- Papers, talks, news, experience, projects, teaching entries
-- Education cards
+In `profile`:
 
-## CV downloads on GitHub Pages
+- `avatar`: image path, e.g. `assets/files/profile-1.png`
+- `avatarFit`: `"contain"` or `"cover"`
+- `avatarZoom`: zoom factor (e.g. `1.2`)
+- `avatarPosition`: object-position, e.g. `"50% 50%"`
+- `avatarOffsetX`, `avatarOffsetY`: direct pan offsets, e.g. `"-20px"`, `"10px"`
 
-Yes, GitHub Pages supports downloadable files.
+## Publications behavior
 
-Current CV path:
+On `papers.html`:
 
-- `assets/files/Lei_Zhang_CV.pdf`
+- auto-sorted by year (newest first)
+- filter chips: `All`, `Published`, `Preprint`, `Patents`
+- badges shown from `kind`
 
-CV source file:
+Use these kinds in `assets/js/site-data.js`:
 
-- `assets/files/Lei_Zhang_CV.tex`
+- `published`
+- `preprint`
+- `patent`
 
-To rebuild PDF from LaTeX:
+## Talks / News behavior
 
-- `pdflatex -interaction=nonstopmode -halt-on-error -output-directory=assets/files assets/files/Lei_Zhang_CV.tex`
+On `talks.html` and `news.html`:
 
-Keep the PDF filename as `Lei_Zhang_CV.pdf` so the button continues to work.
+- timeline layout by year
+- recent 3 years shown by default
+- older years collapsed under `Show older years`
+
+## Search and theme
+
+- top-right search opens site-wide search modal
+- shortcut: `Cmd/Ctrl + K`
+- top-right theme button toggles light/dark mode
+- theme preference is stored in browser local storage
+
