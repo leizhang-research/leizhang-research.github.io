@@ -6,10 +6,10 @@ window.SITE_DATA = {
     organization: "Ruhr University Bochum (ICAMS)",
     avatar: "assets/files/profile-1.png",
     avatarPosition: "50% 50%",
-    avatarZoom: 1.5,
+    avatarZoom: 1.8,
     avatarFit: "contain",
-    avatarOffsetX: "-14px",
-    avatarOffsetY: "0px",
+    avatarOffsetX: "-20px",
+    avatarOffsetY: "-5px",
     summary: [
       "Postdoctoral researcher applying NLP and machine learning for data-driven electrocatalyst discovery.",
       "Creator of MatNexus, an open-source framework for automated literature collection, text mining, and embedding-based property prediction. Current work integrates NLP, multi-modal learning, and optimization with experimental validation."
