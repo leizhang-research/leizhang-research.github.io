@@ -345,25 +345,21 @@ window.SITE_DATA = {
 
     projects: {
       title: "Projects",
-      description: "Research software and current project directions.",
-      items: [
+      description: "Interactive project demos. Use the tabs below to switch between project tools.",
+      subtabs: [
         {
-          title: "MatNexus",
-          subtitle: "Open-source text mining and analysis suite for materials discovery",
-          year: 2024,
-          description: "Framework for automated literature collection, text mining, and embedding-based property prediction.",
-          links: [
-            { label: "SoftwareX paper", href: "https://doi.org/10.1016/j.softx.2024.101654" }
-          ]
+          key: "word-embedding-demo",
+          label: "Word Embedding Demo",
+          type: "embedding-workbench",
+          title: "Element Embedding Workbench",
+          description: "Build a composite by selecting periodic-table elements and relative amounts. The workbench computes a weighted composite embedding, projects it into 2D (PCA), and compares it with property-word embeddings using cosine similarity."
         },
         {
-          title: "Electrocatalyst Discovery via NLP + Optimization",
-          subtitle: "Current postdoctoral research",
-          year: 2025,
-          description: "Integrates text mining, multi-modal learning, and multi-objective optimization with experimental validation.",
-          links: [
-            { label: "arXiv", href: "https://arxiv.org/abs/2502.20860" }
-          ]
+          key: "pareto-front-demo",
+          label: "Pareto Front Demo",
+          type: "pareto-front-workbench",
+          title: "Ternary Composite Pareto Workbench",
+          description: "Select exactly three periodic-table elements, generate all integer ternary composites summing to 100, compute cosine similarity to conductivity/dielectric embeddings, and highlight Pareto-optimal candidates for both optimization directions."
         }
       ]
     },
