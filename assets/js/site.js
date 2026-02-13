@@ -228,6 +228,18 @@
         return;
       }
 
+      if (selected.type === "iterative-paper-selection-demo") {
+        renderIterativePaperSelectionDemo(panelRoot, selected, currentPage, { compact: true });
+        applyLocationFocus(panelRoot);
+        return;
+      }
+
+      if (selected.type === "standard-vector-demo") {
+        renderStandardVectorDemo(panelRoot, selected, currentPage, { compact: true });
+        applyLocationFocus(panelRoot);
+        return;
+      }
+
       panelRoot.innerHTML =
         '<article class="item-card soft">' +
         '<h3 class="item-title">' +
@@ -354,6 +366,29 @@
     });
   }
 
+  function renderDemoPaperReference(section) {
+    const paper = section && section.paper;
+    if (!paper || !paper.href) {
+      return "";
+    }
+
+    const href = escapeHtml(paper.href);
+    const title = escapeHtml(paper.title || "Related paper");
+    const external = /^https?:\/\//.test(paper.href || "");
+    const attrs = external ? ' target="_blank" rel="noopener noreferrer"' : "";
+    return (
+      '<div class="card-links demo-paper-links">' +
+      '<a class="card-link" href="' +
+      href +
+      '"' +
+      attrs +
+      ">Paper: " +
+      title +
+      "</a>" +
+      "</div>"
+    );
+  }
+
   function renderEmbeddingDemo(root, section, currentPage, options) {
     const settings = options || {};
     const compact = Boolean(settings.compact);
@@ -364,6 +399,7 @@
       '<p class="page-description">' +
       escapeHtml(description) +
       "</p>" +
+      renderDemoPaperReference(section) +
       '<article id="embedding-how-to" class="item-card soft embedding-card embedding-intro-card">' +
       '<h3 class="embedding-card-title">How To Use This Demo</h3>' +
       '<ol class="embedding-guide-list">' +
@@ -448,6 +484,7 @@
       '<p class="page-description">' +
       escapeHtml(description) +
       "</p>" +
+      renderDemoPaperReference(section) +
       '<article id="pareto-how-to" class="item-card soft embedding-card embedding-intro-card">' +
       '<h3 class="embedding-card-title">How To Use This Demo</h3>' +
       '<ol class="embedding-guide-list">' +
@@ -531,6 +568,1862 @@
 
         applyLocationFocus(root);
       });
+  }
+
+  function renderIterativePaperSelectionDemo(root, section, currentPage, options) {
+    const settings = options || {};
+    const compact = Boolean(settings.compact);
+    const title = section.title || "Iterative Corpus Selection and Convergence";
+    const description = section.description || "";
+    const dataset = buildIterativePaperDemoDataset();
+    const stepMax = Math.max(0, dataset.iterations.length - 1);
+
+    const introHtml =
+      (compact ? "" : sectionHeader(title, currentPage)) +
+      '<p class="page-description">' +
+      escapeHtml(description) +
+      "</p>" +
+      renderDemoPaperReference(section) +
+      '<article id="iterative-how-to" class="item-card soft embedding-card embedding-intro-card">' +
+      '<h3 class="embedding-card-title">How To Use This Demo</h3>' +
+      '<ol class="embedding-guide-list">' +
+      "<li>Use the slider (or Play) to increase corpus size in greedy farthest-selection batches of 50 papers.</li>" +
+      "<li>The main plot shows how selected papers spread over the synthetic corpus embedding space.</li>" +
+      "<li>The linked plots track similarity-space centroid stabilization and stop once centroid shift reaches the threshold (0.03).</li>" +
+      "</ol>" +
+      '<p class="embedding-hint">Everything is synthetic and prebaked per iteration. The interaction updates all linked views without retraining any model.</p>' +
+      "</article>";
+
+    root.innerHTML =
+      introHtml +
+      '<div class="iterative-demo-layout">' +
+      '<article id="iterative-corpus-plot" class="item-card soft embedding-card iterative-main-card">' +
+      '<h3 class="embedding-card-title">Corpus Embedding + Selection (Main)</h3>' +
+      '<p class="embedding-hint">Gray: full synthetic corpus. Blue: selected papers. Bright blue: newly added batch. Star: initial central paper.</p>' +
+      '<div id="iterative-controls" class="iterative-inline-controls">' +
+      '<div class="iterative-controls-row">' +
+      '<label class="iterative-slider-label" for="iterative-step-slider">Corpus size / iteration</label>' +
+      '<input id="iterative-step-slider" class="iterative-step-slider" type="range" min="0" max="' +
+      String(stepMax) +
+      '" step="1" value="0">' +
+      '<div class="iterative-control-actions">' +
+      '<button type="button" class="pareto-analyze-btn" id="iterative-play-btn">Play</button>' +
+      '<button type="button" class="older-toggle-btn" id="iterative-reset-btn">Reset</button>' +
+      "</div>" +
+      "</div>" +
+      '<div class="iterative-status-row">' +
+      '<span id="iterative-step-label" class="iterative-step-label"></span>' +
+      '<span id="iterative-status-chip" class="iterative-status-chip"></span>' +
+      "</div>" +
+      "</div>" +
+      '<div class="iterative-legend">' +
+      '<span class="embedding-legend-item"><span class="embedding-legend-dot iterative-dot-all"></span>All papers</span>' +
+      '<span class="embedding-legend-item"><span class="embedding-legend-dot iterative-dot-selected"></span>Selected papers</span>' +
+      '<span class="embedding-legend-item"><span class="embedding-legend-dot iterative-dot-new"></span>New batch (50)</span>' +
+      '<span class="embedding-legend-item"><span class="embedding-legend-dot iterative-dot-seed"></span>Initial central paper</span>' +
+      "</div>" +
+      '<div class="embedding-map-wrap">' +
+      '<svg id="iterative-corpus-map" class="embedding-map" viewBox="0 0 760 420" aria-label="Synthetic corpus embedding and iterative farthest selection"></svg>' +
+      "</div>" +
+      "</article>" +
+      '<section class="iterative-side-column">' +
+      '<article id="iterative-similarity-plot" class="item-card soft embedding-card">' +
+      '<h3 class="embedding-card-title">Similarity Space + Centroid Trajectory</h3>' +
+      '<p class="embedding-hint">Coordinates are synthetic (S_dielectric, S_conductivity). The line and marker show centroid evolution across iterations.</p>' +
+      '<div class="iterative-legend">' +
+      '<span class="embedding-legend-item"><span class="embedding-legend-dot iterative-dot-sim"></span>All compositions</span>' +
+      '<span class="embedding-legend-item"><span class="embedding-legend-dot iterative-dot-centroid"></span>Centroid path/current</span>' +
+      "</div>" +
+      '<div class="embedding-map-wrap">' +
+      '<svg id="iterative-similarity-map" class="embedding-map" viewBox="0 0 700 360" aria-label="Similarity space centroid trajectory"></svg>' +
+      "</div>" +
+      "</article>" +
+      '<article id="iterative-convergence-plot" class="item-card soft embedding-card">' +
+      '<h3 class="embedding-card-title">Centroid Shift Convergence</h3>' +
+      '<p class="embedding-hint">y = distance between centroid(t) and centroid(t-1). Selection stops once this value reaches the 0.03 threshold.</p>' +
+      '<div class="embedding-map-wrap">' +
+      '<svg id="iterative-convergence-map" class="embedding-map" viewBox="0 0 700 280" aria-label="Centroid-shift convergence curve over iterations"></svg>' +
+      "</div>" +
+      "</article>" +
+      "</section>" +
+      "</div>";
+
+    setupIterativePaperSelectionWorkbench(root, dataset);
+    applyLocationFocus(root);
+  }
+
+  function renderStandardVectorDemo(root, section, currentPage, options) {
+    const settings = options || {};
+    const compact = Boolean(settings.compact);
+    const title = section.title || "Standard Vector Training Loop";
+    const description = section.description || "";
+    const data = buildStandardVectorLoopData();
+
+    const introHtml =
+      (compact ? "" : sectionHeader(title, currentPage)) +
+      '<p class="page-description">' +
+      escapeHtml(description) +
+      "</p>" +
+      renderDemoPaperReference(section) +
+      '<article id="sv-loop-how-to" class="item-card soft embedding-card embedding-intro-card">' +
+      '<h3 class="embedding-card-title">How To Use This Demo</h3>' +
+      '<ol class="embedding-guide-list">' +
+      "<li>Press Play to run the synthetic fitting loop.</li>" +
+      "<li>Watch training signal flow from training set to weighted property terms, then to target set and back for feedback updates.</li>" +
+      "<li>The final weighted term embedding defines the standard vector, and its 2D position stabilizes in the embedding plot.</li>" +
+      "</ol>" +
+      '<p class="embedding-hint">Illustrative workflow only. No live model training is performed.</p>' +
+      "</article>";
+
+    root.innerHTML =
+      introHtml +
+      '<div class="sv-loop-layout">' +
+      '<article id="sv-loop-flow-panel" class="item-card soft embedding-card sv-loop-main-card">' +
+      '<h3 class="embedding-card-title">Training Flow and Weight Updates</h3>' +
+      '<p class="embedding-hint">Left: training set. Middle: property words with weight slots. Right: target set feedback.</p>' +
+      '<div class="sv-loop-controls">' +
+      '<button type="button" class="pareto-analyze-btn" id="sv-loop-play-btn">Play</button>' +
+      '<span id="sv-loop-status" class="iterative-status-chip sv-loop-status"></span>' +
+      "</div>" +
+      '<div class="embedding-map-wrap">' +
+      '<svg id="sv-loop-flow-map" class="embedding-map sv-loop-flow-map" viewBox="0 0 1000 430" aria-label="Standard vector training flow"></svg>' +
+      "</div>" +
+      '<p id="sv-loop-summary" class="embedding-hint"></p>' +
+      "</article>" +
+      '<article id="sv-loop-embedding-panel" class="item-card soft embedding-card">' +
+      '<h3 class="embedding-card-title">Embedding Distribution + Standard Vector Trajectory</h3>' +
+      '<p class="embedding-hint">Gray points are property-word embeddings. Blue path is standard-vector movement during fitting.</p>' +
+      '<div class="sv-loop-legend">' +
+      '<span class="embedding-legend-item"><span class="embedding-legend-dot sv-loop-dot-word"></span>Property words</span>' +
+      '<span class="embedding-legend-item"><span class="embedding-legend-dot sv-loop-dot-trace"></span>Standard-vector trajectory</span>' +
+      '<span class="embedding-legend-item"><span class="embedding-legend-dot sv-loop-dot-current"></span>Current standard vector</span>' +
+      "</div>" +
+      '<div class="embedding-map-wrap">' +
+      '<svg id="sv-loop-embedding-map" class="embedding-map sv-loop-embedding-map" viewBox="0 0 700 400" aria-label="Standard vector position in property-word embedding space"></svg>' +
+      "</div>" +
+      "</article>" +
+      "</div>";
+
+    setupStandardVectorLoopDemo(root, data);
+    applyLocationFocus(root);
+  }
+
+  function setupStandardVectorLoopDemo(root, data) {
+    const playBtn = root.querySelector("#sv-loop-play-btn");
+    const statusChip = root.querySelector("#sv-loop-status");
+    const summary = root.querySelector("#sv-loop-summary");
+    const flowMap = root.querySelector("#sv-loop-flow-map");
+    const embeddingMap = root.querySelector("#sv-loop-embedding-map");
+
+    if (!playBtn || !statusChip || !summary || !flowMap || !embeddingMap) {
+      return;
+    }
+
+    const state = {
+      frameIndex: 0,
+      timerId: 0
+    };
+    const maxFrame = Math.max(0, data.frames.length - 1);
+
+    function stopPlayback() {
+      if (state.timerId) {
+        window.clearInterval(state.timerId);
+        state.timerId = 0;
+      }
+      playBtn.textContent = state.frameIndex >= maxFrame ? "Replay" : "Play";
+    }
+
+    function renderCurrentFrame() {
+      const frame = data.frames[state.frameIndex];
+      if (!frame) {
+        return;
+      }
+
+      statusChip.textContent =
+        "Iteration " + String(state.frameIndex + 1) + "/" + String(maxFrame + 1) + " | " + frame.caption;
+      statusChip.classList.toggle("is-converged", frame.phase === "set");
+
+      if (frame.phase === "set") {
+        const ranked = data.terms
+          .map(function (term, index) {
+            return { label: term.label, weight: frame.weights[index] };
+          })
+          .sort(function (a, b) {
+            return b.weight - a.weight;
+          })
+          .slice(0, 3);
+        summary.textContent =
+          "Standard vector fixed: sum(w_i * embedding_i). Top terms: " +
+          ranked
+            .map(function (entry) {
+              return entry.label + " (" + entry.weight.toFixed(2) + ")";
+            })
+            .join(", ") +
+          ".";
+      } else {
+        summary.textContent = "Loop running: training signal -> weighted terms -> target feedback -> weight update.";
+      }
+
+      renderStandardVectorFlowPlot(flowMap, data, state.frameIndex);
+      renderStandardVectorEmbeddingPlot(embeddingMap, data, state.frameIndex);
+    }
+
+    function startPlayback() {
+      if (state.timerId) {
+        return;
+      }
+      if (state.frameIndex >= maxFrame) {
+        state.frameIndex = 0;
+        renderCurrentFrame();
+      }
+      playBtn.textContent = "Pause";
+      state.timerId = window.setInterval(function () {
+        if (!document.body.contains(root)) {
+          stopPlayback();
+          return;
+        }
+        if (state.frameIndex >= maxFrame) {
+          stopPlayback();
+          return;
+        }
+        state.frameIndex += 1;
+        renderCurrentFrame();
+      }, 900);
+    }
+
+    playBtn.addEventListener("click", function () {
+      if (state.timerId) {
+        stopPlayback();
+      } else {
+        startPlayback();
+      }
+    });
+
+    renderCurrentFrame();
+  }
+
+  function buildStandardVectorLoopData() {
+    const terms = [
+      { id: "electrocatalyst", label: "electrocatalyst" },
+      { id: "high-entropy", label: "high entropy" },
+      { id: "resistance", label: "resistance" },
+      { id: "overpotential", label: "overpotential" },
+      { id: "tafel-slope", label: "tafel slope" },
+      { id: "stability", label: "stability" },
+      { id: "adsorption-energy", label: "adsorption energy" }
+    ];
+
+    const embeddingWords = [
+      { id: "electrocatalyst", label: "electrocatalyst", x: -0.64, y: 0.4 },
+      { id: "high-entropy", label: "high entropy", x: -0.2, y: 0.6 },
+      { id: "resistance", label: "resistance", x: 0.44, y: 0.3 },
+      { id: "overpotential", label: "overpotential", x: 0.56, y: -0.08 },
+      { id: "tafel-slope", label: "tafel slope", x: 0.29, y: -0.44 },
+      { id: "stability", label: "stability", x: -0.24, y: -0.5 },
+      { id: "adsorption-energy", label: "adsorption energy", x: -0.66, y: -0.16 }
+    ];
+
+    const embeddingById = embeddingWords.reduce(function (map, entry) {
+      map[entry.id] = { x: Number(entry.x) || 0, y: Number(entry.y) || 0 };
+      return map;
+    }, {});
+
+    function computeStandardVec(weights) {
+      const safeWeights = Array.isArray(weights) ? weights : [];
+      let sumWeight = 0;
+      let sumX = 0;
+      let sumY = 0;
+      terms.forEach(function (term, index) {
+        const weight = Number(safeWeights[index] || 0);
+        const embedding = embeddingById[term.id] || { x: 0, y: 0 };
+        sumWeight += weight;
+        sumX += weight * embedding.x;
+        sumY += weight * embedding.y;
+      });
+      if (sumWeight <= 0) {
+        return [0, 0];
+      }
+      return [sumX / sumWeight, sumY / sumWeight];
+    }
+
+    const frames = [
+      {
+        phase: "init",
+        flowProgress: 0,
+        caption: "Initialization",
+        weights: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+      },
+      {
+        phase: "train-center",
+        flowProgress: 0.34,
+        caption: "Training signal enters property terms",
+        weights: [1.72, 1.64, 1.02, 0.96, 0.92, 0.94, 1.38]
+      },
+      {
+        phase: "center-target",
+        flowProgress: 0.61,
+        caption: "Weighted terms project toward target set",
+        weights: [1.26, 1.08, 1.38, 1.72, 1.24, 0.92, 0.96]
+      },
+      {
+        phase: "target-center",
+        flowProgress: 0.43,
+        caption: "Target feedback returns",
+        weights: [1.18, 1.02, 1.12, 1.24, 1.58, 1.66, 1.14]
+      },
+      {
+        phase: "train-center",
+        flowProgress: 0.79,
+        caption: "Second pass amplifies catalytic terms",
+        weights: [1.44, 1.19, 1.46, 1.82, 1.52, 1.08, 1.02]
+      },
+      {
+        phase: "center-target",
+        flowProgress: 0.82,
+        caption: "Projection sharpened in target direction",
+        weights: [1.52, 1.28, 1.56, 1.9, 1.64, 1.18, 1.08]
+      },
+      {
+        phase: "target-center",
+        flowProgress: 0.68,
+        caption: "Final feedback correction",
+        weights: [1.58, 1.36, 1.42, 1.8, 1.57, 1.29, 1.2]
+      },
+      {
+        phase: "set",
+        flowProgress: 1,
+        caption: "Converged",
+        weights: [1.63, 1.47, 1.36, 1.82, 1.59, 1.38, 1.24]
+      }
+    ].map(function (frame) {
+      return {
+        phase: frame.phase,
+        flowProgress: frame.flowProgress,
+        caption: frame.caption,
+        weights: frame.weights.slice(),
+        standardVec: computeStandardVec(frame.weights)
+      };
+    });
+
+    return {
+      terms: terms,
+      embeddingWords: embeddingWords,
+      frames: frames
+    };
+  }
+
+  function renderStandardVectorFlowPlot(svg, data, frameIndex) {
+    const frame = data.frames[frameIndex] || data.frames[0];
+    const prevFrame = data.frames[Math.max(0, frameIndex - 1)] || frame;
+    const trainBox = { x: 24, y: 118, w: 206, h: 168 };
+    const center = { x: 234, y: 24, w: 500, h: 372 };
+    const targetBox = { x: 754, y: 118, w: 206, h: 168 };
+    const trainOutlet = { x: trainBox.x + trainBox.w + 8, y: 204 };
+    const targetInlet = { x: targetBox.x - 8, y: 204 };
+    const feedbackStart = { x: targetInlet.x, y: 266 };
+    const feedbackEnd = { x: trainOutlet.x, y: 266 };
+    const termX = 282;
+    const termW = 210;
+    const trackX = 516;
+    const trackW = 164;
+    const rowStart = 92;
+    const rowStep = 42;
+    const focusIndex = frameIndex % data.terms.length;
+    const isSet = frame.phase === "set";
+
+    function capsulePath(x, y, w, h) {
+      const radius = Math.max(1, h / 2);
+      const left = x;
+      const right = x + w;
+      const top = y;
+      const bottom = y + h;
+      return (
+        "M" +
+        String(left + radius) +
+        " " +
+        String(top) +
+        " L" +
+        String(right - radius) +
+        " " +
+        String(top) +
+        " C" +
+        String(right - radius * 0.28) +
+        " " +
+        String(top) +
+        " " +
+        String(right) +
+        " " +
+        String(top + radius * 0.28) +
+        " " +
+        String(right) +
+        " " +
+        String(top + radius) +
+        " C" +
+        String(right) +
+        " " +
+        String(bottom - radius * 0.28) +
+        " " +
+        String(right - radius * 0.28) +
+        " " +
+        String(bottom) +
+        " " +
+        String(right - radius) +
+        " " +
+        String(bottom) +
+        " L" +
+        String(left + radius) +
+        " " +
+        String(bottom) +
+        " C" +
+        String(left + radius * 0.28) +
+        " " +
+        String(bottom) +
+        " " +
+        String(left) +
+        " " +
+        String(bottom - radius * 0.28) +
+        " " +
+        String(left) +
+        " " +
+        String(bottom - radius) +
+        " C" +
+        String(left) +
+        " " +
+        String(top + radius * 0.28) +
+        " " +
+        String(left + radius * 0.28) +
+        " " +
+        String(top) +
+        " " +
+        String(left + radius) +
+        " " +
+        String(top) +
+        " Z"
+      );
+    }
+
+    function unitShellPath(x, y, w, h) {
+      const right = x + w;
+      const bottom = y + h;
+      return (
+        "M" +
+        String(x + 36) +
+        " " +
+        String(y) +
+        " C" +
+        String(x + 8) +
+        " " +
+        String(y + 2) +
+        " " +
+        String(x) +
+        " " +
+        String(y + 28) +
+        " " +
+        String(x) +
+        " " +
+        String(y + 54) +
+        " L" +
+        String(x) +
+        " " +
+        String(bottom - 48) +
+        " C" +
+        String(x) +
+        " " +
+        String(bottom - 14) +
+        " " +
+        String(x + 18) +
+        " " +
+        String(bottom) +
+        " " +
+        String(x + 54) +
+        " " +
+        String(bottom) +
+        " L" +
+        String(right - 46) +
+        " " +
+        String(bottom) +
+        " C" +
+        String(right - 14) +
+        " " +
+        String(bottom) +
+        " " +
+        String(right) +
+        " " +
+        String(bottom - 16) +
+        " " +
+        String(right) +
+        " " +
+        String(bottom - 46) +
+        " L" +
+        String(right) +
+        " " +
+        String(y + 52) +
+        " C" +
+        String(right) +
+        " " +
+        String(y + 18) +
+        " " +
+        String(right - 16) +
+        " " +
+        String(y) +
+        " " +
+        String(right - 48) +
+        " " +
+        String(y) +
+        " Z"
+      );
+    }
+
+    function centerShellPath(x, y, w, h) {
+      const right = x + w;
+      const bottom = y + h;
+      return (
+        "M" +
+        String(x + 96) +
+        " " +
+        String(y) +
+        " C" +
+        String(x + 34) +
+        " " +
+        String(y) +
+        " " +
+        String(x) +
+        " " +
+        String(y + 36) +
+        " " +
+        String(x) +
+        " " +
+        String(y + 92) +
+        " L" +
+        String(x) +
+        " " +
+        String(bottom - 96) +
+        " C" +
+        String(x) +
+        " " +
+        String(bottom - 38) +
+        " " +
+        String(x + 38) +
+        " " +
+        String(bottom) +
+        " " +
+        String(x + 104) +
+        " " +
+        String(bottom) +
+        " L" +
+        String(right - 106) +
+        " " +
+        String(bottom) +
+        " C" +
+        String(right - 38) +
+        " " +
+        String(bottom) +
+        " " +
+        String(right) +
+        " " +
+        String(bottom - 38) +
+        " " +
+        String(right) +
+        " " +
+        String(bottom - 98) +
+        " L" +
+        String(right) +
+        " " +
+        String(y + 96) +
+        " C" +
+        String(right) +
+        " " +
+        String(y + 36) +
+        " " +
+        String(right - 38) +
+        " " +
+        String(y) +
+        " " +
+        String(right - 104) +
+        " " +
+        String(y) +
+        " Z"
+      );
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * clampNumber(t, 0, 1, 0);
+    }
+
+    function cubicPoint(p0, p1, p2, p3, t) {
+      const u = 1 - t;
+      const x =
+        u * u * u * p0.x +
+        3 * u * u * t * p1.x +
+        3 * u * t * t * p2.x +
+        t * t * t * p3.x;
+      const y =
+        u * u * u * p0.y +
+        3 * u * u * t * p1.y +
+        3 * u * t * t * p2.y +
+        t * t * t * p3.y;
+      return { x: x, y: y };
+    }
+
+    function rowY(index) {
+      return rowStart + index * rowStep;
+    }
+
+    function forwardPath(y) {
+      return (
+        "M" +
+        String(trainOutlet.x) +
+        " " +
+        String(trainOutlet.y) +
+        " C" +
+        String(trainOutlet.x + 84) +
+        " " +
+        String(trainOutlet.y - 10) +
+        " " +
+        String(termX - 98) +
+        " " +
+        String(y) +
+        " " +
+        String(termX) +
+        " " +
+        String(y)
+      );
+    }
+
+    function targetPath(y) {
+      return (
+        "M" +
+        String(trackX + trackW) +
+        " " +
+        String(y) +
+        " C" +
+        String(trackX + trackW + 92) +
+        " " +
+        String(y) +
+        " " +
+        String(targetInlet.x - 86) +
+        " " +
+        String(targetInlet.y - 8) +
+        " " +
+        String(targetInlet.x) +
+        " " +
+        String(targetInlet.y)
+      );
+    }
+
+    const feedbackPath =
+      "M" +
+      String(feedbackStart.x) +
+      " " +
+      String(feedbackStart.y) +
+      " C670 356 330 356 " +
+      String(feedbackEnd.x) +
+      " " +
+      String(feedbackEnd.y);
+
+    const forwardLinks = data.terms
+      .map(function (term, index) {
+        const hot = frame.phase === "train-center" && Math.abs(index - focusIndex) <= 1;
+        return (
+          '<path class="sv-loop-link sv-loop-link-forward' +
+          (hot ? " is-hot" : "") +
+          (isSet ? " is-set" : "") +
+          '" d="' +
+          forwardPath(rowY(index)) +
+          '"></path>'
+        );
+      })
+      .join("");
+
+    const targetLinks = data.terms
+      .map(function (term, index) {
+        const hot = frame.phase === "center-target" && Math.abs(index - focusIndex) <= 1;
+        return (
+          '<path class="sv-loop-link sv-loop-link-target' +
+          (hot ? " is-hot" : "") +
+          (isSet ? " is-set" : "") +
+          '" d="' +
+          targetPath(rowY(index)) +
+          '"></path>'
+        );
+      })
+      .join("");
+
+    const rowStates = data.terms.map(function (term, index) {
+      const y = rowStart + index * rowStep;
+      const weightValue = Number(frame.weights[index] || 1);
+      const prevWeight = Number(prevFrame.weights[index] || weightValue);
+      const delta = weightValue - prevWeight;
+      const deltaLabel = (delta >= 0 ? "+" : "") + delta.toFixed(2);
+      const deltaClass = delta > 0.004 ? " pos" : delta < -0.004 ? " neg" : "";
+      const fillRatio = clampNumber((weightValue - 1) / 0.92, 0.06, 1, 0.06);
+      const fillWidth = Math.round(trackW * fillRatio);
+      return {
+        term: term,
+        index: index,
+        y: y,
+        weightValue: weightValue,
+        deltaLabel: deltaLabel,
+        deltaClass: deltaClass,
+        fillWidth: fillWidth,
+        anchorY: y,
+        sumAnchorX: termX + termW + 8
+      };
+    });
+
+    const totalWeight = rowStates.reduce(function (sum, row) {
+      return sum + row.weightValue;
+    }, 0);
+    const weightedTotal = totalWeight > 0 ? totalWeight : 1;
+    const weightedY = rowStates.reduce(function (sum, row) {
+      return sum + row.anchorY * row.weightValue;
+    }, 0) / weightedTotal;
+    const rowMinY = rowStart;
+    const rowMaxY = rowStart + (rowStates.length - 1) * rowStep;
+    const rowRange = Math.max(1, rowMaxY - rowMinY);
+    const rowNormalized = clampNumber((weightedY - rowMinY) / rowRange, 0, 1, 0.5);
+    const vectorBounds = data.frames.reduce(
+      function (bounds, entry) {
+        const vec = Array.isArray(entry.standardVec) ? entry.standardVec : [0, 0];
+        const vx = Number(vec[0] || 0);
+        const vy = Number(vec[1] || 0);
+        return {
+          minX: Math.min(bounds.minX, vx),
+          maxX: Math.max(bounds.maxX, vx),
+          minY: Math.min(bounds.minY, vy),
+          maxY: Math.max(bounds.maxY, vy)
+        };
+      },
+      { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity }
+    );
+    const vector = Array.isArray(frame.standardVec) ? frame.standardVec : [0, 0];
+    const vectorX = Number(vector[0] || 0);
+    const vectorY = Number(vector[1] || 0);
+    const vectorRangeX = Math.max(0.001, vectorBounds.maxX - vectorBounds.minX);
+    const vectorRangeY = Math.max(0.001, vectorBounds.maxY - vectorBounds.minY);
+    const vectorNormX = clampNumber((vectorX - vectorBounds.minX) / vectorRangeX, 0, 1, 0.5);
+    const vectorNormY = clampNumber((vectorY - vectorBounds.minY) / vectorRangeY, 0, 1, 0.5);
+    const basin = {
+      x: termX + 16,
+      y: rowMaxY + 14,
+      w: termW + 136,
+      h: Math.max(26, center.y + center.h - (rowMaxY + 14) - 10)
+    };
+    const basinInsetX = 16;
+    const basinInsetY = 8;
+    const standardPoint = {
+      x: basin.x + basinInsetX + vectorNormX * Math.max(2, basin.w - basinInsetX * 2),
+      y: clampNumber(
+        basin.y +
+          basinInsetY +
+          (1 - vectorNormY) * Math.max(2, basin.h - basinInsetY * 2) +
+          (rowNormalized - 0.5) * 4,
+        basin.y + basinInsetY,
+        basin.y + basin.h - basinInsetY,
+        basin.y + basin.h * 0.5
+      )
+    };
+
+    const sumLinks = rowStates
+      .map(function (row) {
+        const opacity = clampNumber((row.weightValue - 1) / 0.9, 0.15, 0.62, 0.24);
+        return (
+          '<path class="sv-loop-sum-link" d="M' +
+          String(row.sumAnchorX) +
+          " " +
+          String(row.anchorY) +
+          " C" +
+          String(row.sumAnchorX + 26) +
+          " " +
+          String(row.anchorY) +
+          " " +
+          String(standardPoint.x - 28) +
+          " " +
+          String(standardPoint.y) +
+          " " +
+          String(standardPoint.x) +
+          " " +
+          String(standardPoint.y) +
+          '" style="opacity:' +
+          String(opacity.toFixed(2)) +
+          ';"></path>'
+        );
+      })
+      .join("");
+
+    const weightRows = rowStates
+      .map(function (row) {
+        const termPath = capsulePath(termX, row.y - 14, termW, 28);
+        const trackPath = capsulePath(trackX, row.y - 12, trackW, 24);
+        const fillPath = capsulePath(trackX, row.y - 12, row.fillWidth, 24);
+        return (
+          '<path class="sv-loop-term-pill" d="' +
+          termPath +
+          '"></path>' +
+          '<text class="sv-loop-term-text" x="' +
+          String(termX + 13) +
+          '" y="' +
+          String(row.y + 4) +
+          '">' +
+          escapeHtml(row.term.label) +
+          "</text>" +
+          '<path class="sv-loop-weight-track" d="' +
+          trackPath +
+          '"></path>' +
+          '<path class="sv-loop-weight-fill" d="' +
+          fillPath +
+          '"></path>' +
+          '<text class="sv-loop-weight-value" x="' +
+          String(trackX + trackW + 10) +
+          '" y="' +
+          String(row.y + 14) +
+          '">' +
+          escapeHtml(row.weightValue.toFixed(2)) +
+          "</text>" +
+          '<text class="sv-loop-weight-delta' +
+          row.deltaClass +
+          '" x="' +
+          String(trackX + trackW + 58) +
+          '" y="' +
+          String(row.y + 14) +
+          '">' +
+          escapeHtml(row.deltaLabel) +
+          "</text>" +
+          '<circle class="sv-loop-join-dot" cx="' +
+          String(termX) +
+          '" cy="' +
+          String(row.anchorY) +
+          '" r="3.2"></circle>' +
+          '<circle class="sv-loop-join-dot" cx="' +
+          String(trackX + trackW) +
+          '" cy="' +
+          String(row.anchorY) +
+          '" r="3.2"></circle>' +
+          '<circle class="sv-loop-row-focus' +
+          (Math.abs(row.index - focusIndex) <= 1 && !isSet ? " is-hot" : "") +
+          '" cx="' +
+          String(termX - 14) +
+          '" cy="' +
+          String(row.anchorY) +
+          '" r="2.8"></circle>'
+        );
+      })
+      .join("");
+
+    const pulses = [];
+
+    function pushPulse(point, className, delay) {
+      pulses.push(
+        '<circle class="sv-loop-pulse ' +
+          className +
+          '" cx="' +
+          String(point.x) +
+          '" cy="' +
+          String(point.y) +
+          '" r="6" style="animation-delay:' +
+          String(delay) +
+          'ms;"></circle>'
+      );
+    }
+
+    if (frame.phase === "train-center") {
+      [-1, 0, 1].forEach(function (offset, idx) {
+        const index = focusIndex + offset;
+        if (index < 0 || index >= data.terms.length) {
+          return;
+        }
+        const t = clampNumber(frame.flowProgress - idx * 0.14, 0.08, 1, 0.22);
+        const point = cubicPoint(
+          { x: trainOutlet.x, y: trainOutlet.y },
+          { x: trainOutlet.x + 84, y: trainOutlet.y - 10 },
+          { x: termX - 98, y: rowY(index) },
+          { x: termX, y: rowY(index) },
+          t
+        );
+        pushPulse(point, "is-forward", idx * 90);
+      });
+    } else if (frame.phase === "center-target") {
+      [-1, 0, 1].forEach(function (offset, idx) {
+        const index = focusIndex + offset;
+        if (index < 0 || index >= data.terms.length) {
+          return;
+        }
+        const t = clampNumber(frame.flowProgress - idx * 0.12, 0.08, 1, 0.2);
+        const point = cubicPoint(
+          { x: trackX + trackW, y: rowY(index) },
+          { x: trackX + trackW + 92, y: rowY(index) },
+          { x: targetInlet.x - 86, y: targetInlet.y - 8 },
+          { x: targetInlet.x, y: targetInlet.y },
+          t
+        );
+        pushPulse(point, "is-target", idx * 80);
+      });
+    } else if (frame.phase === "target-center") {
+      const t = clampNumber(frame.flowProgress, 0.05, 1, 0.2);
+      const point = cubicPoint(
+        feedbackStart,
+        { x: 670, y: 356 },
+        { x: 330, y: 356 },
+        feedbackEnd,
+        t
+      );
+      pushPulse(point, "is-feedback", 0);
+    }
+
+    svg.innerHTML =
+      '<defs>' +
+      '<linearGradient id="sv-loop-forward-grad" x1="0" y1="0" x2="1" y2="0">' +
+      '<stop offset="0%" stop-color="rgba(104,172,247,0.18)"></stop>' +
+      '<stop offset="55%" stop-color="rgba(74,148,236,0.64)"></stop>' +
+      '<stop offset="100%" stop-color="rgba(91,181,255,0.16)"></stop>' +
+      "</linearGradient>" +
+      '<linearGradient id="sv-loop-feedback-grad" x1="0" y1="0" x2="1" y2="0">' +
+      '<stop offset="0%" stop-color="rgba(247,170,116,0.16)"></stop>' +
+      '<stop offset="55%" stop-color="rgba(233,143,79,0.74)"></stop>' +
+      '<stop offset="100%" stop-color="rgba(247,170,116,0.16)"></stop>' +
+      "</linearGradient>" +
+      '<filter id="sv-loop-glow">' +
+      '<feGaussianBlur stdDeviation="3.3" result="blur"></feGaussianBlur>' +
+      '<feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>' +
+      "</filter>" +
+      "</defs>" +
+      '<circle class="sv-loop-panel-aura" cx="500" cy="212" r="182"></circle>' +
+      '<path class="sv-loop-zone sv-loop-zone-left" d="' +
+      unitShellPath(trainBox.x, trainBox.y, trainBox.w, trainBox.h) +
+      '"></path>' +
+      '<text class="sv-loop-box-title sv-loop-card-title" x="' +
+      String(trainBox.x + trainBox.w * 0.5) +
+      '" y="' +
+      String(trainOutlet.y + 6) +
+      '" text-anchor="middle"' +
+      '">TRAINING SET</text>' +
+      '<path class="sv-loop-zone sv-loop-zone-center" d="' +
+      centerShellPath(center.x, center.y, center.w, center.h) +
+      '"></path>' +
+      '<text class="sv-loop-center-title" x="' +
+      String(center.x + center.w * 0.5) +
+      '" y="' +
+      String(center.y + 38) +
+      '" text-anchor="middle"' +
+      '">Property Terms + Adaptive Weights</text>' +
+      forwardLinks +
+      targetLinks +
+      '<path class="sv-loop-feedback' +
+      (frame.phase === "target-center" || isSet ? " is-hot" : "") +
+      '" d="' +
+      feedbackPath +
+      '"></path>' +
+      sumLinks +
+      weightRows +
+      '<path class="sv-loop-zone sv-loop-zone-right" d="' +
+      unitShellPath(targetBox.x, targetBox.y, targetBox.w, targetBox.h) +
+      '"></path>' +
+      '<text class="sv-loop-box-title sv-loop-card-title" x="' +
+      String(targetBox.x + targetBox.w * 0.5) +
+      '" y="' +
+      String(targetInlet.y + 6) +
+      '" text-anchor="middle"' +
+      '">TARGET SET</text>' +
+      pulses.join("") +
+      '<circle class="sv-loop-standard-core" cx="' +
+      String(standardPoint.x) +
+      '" cy="' +
+      String(standardPoint.y) +
+      '" r="11" style="opacity:' +
+      String(isSet ? 1 : 0.34) +
+      ';"></circle>' +
+      '<text class="sv-loop-standard-text" x="' +
+      String(standardPoint.x + 14) +
+      '" y="' +
+      String(standardPoint.y + 5) +
+      '">standard vector</text>';
+  }
+
+  function renderStandardVectorEmbeddingPlot(svg, data, frameIndex) {
+    const width = 700;
+    const height = 400;
+    const margin = { left: 68, right: 22, top: 24, bottom: 60 };
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+    const frame = data.frames[frameIndex] || data.frames[0];
+
+    function scaleX(value) {
+      const normalized = (value + 1) / 2;
+      return margin.left + clampNumber(normalized, 0, 1, 0.5) * plotWidth;
+    }
+
+    function scaleY(value) {
+      const normalized = (value + 1) / 2;
+      return margin.top + (1 - clampNumber(normalized, 0, 1, 0.5)) * plotHeight;
+    }
+
+    let grid = "";
+    for (let i = 0; i <= 5; i += 1) {
+      const gx = margin.left + (plotWidth / 5) * i;
+      const gy = margin.top + (plotHeight / 5) * i;
+      grid +=
+        '<line class="sv-loop-grid-line" x1="' +
+        String(gx) +
+        '" y1="' +
+        String(margin.top) +
+        '" x2="' +
+        String(gx) +
+        '" y2="' +
+        String(height - margin.bottom) +
+        '"></line>';
+      grid +=
+        '<line class="sv-loop-grid-line" x1="' +
+        String(margin.left) +
+        '" y1="' +
+        String(gy) +
+        '" x2="' +
+        String(width - margin.right) +
+        '" y2="' +
+        String(gy) +
+        '"></line>';
+    }
+
+    const wordPoints = data.embeddingWords
+      .map(function (entry) {
+        const x = scaleX(entry.x);
+        const y = scaleY(entry.y);
+        return (
+          '<circle class="sv-loop-word-point" cx="' +
+          String(x) +
+          '" cy="' +
+          String(y) +
+          '" r="4.8"></circle>' +
+          '<text class="sv-loop-word-text" x="' +
+          String(x + 8) +
+          '" y="' +
+          String(y - 6) +
+          '">' +
+          escapeHtml(entry.label) +
+          "</text>"
+        );
+      })
+      .join("");
+
+    const trajectoryPoints = data.frames.slice(0, frameIndex + 1).map(function (entry) {
+      return {
+        x: scaleX(entry.standardVec[0]),
+        y: scaleY(entry.standardVec[1])
+      };
+    });
+
+    const trajectoryPath = trajectoryPoints
+      .map(function (point, index) {
+        return (index === 0 ? "M" : "L") + String(point.x) + " " + String(point.y);
+      })
+      .join(" ");
+
+    const currentX = scaleX(frame.standardVec[0]);
+    const currentY = scaleY(frame.standardVec[1]);
+
+    svg.innerHTML =
+      '<rect class="embedding-map-bg" x="' +
+      String(margin.left) +
+      '" y="' +
+      String(margin.top) +
+      '" width="' +
+      String(plotWidth) +
+      '" height="' +
+      String(plotHeight) +
+      '" rx="14"></rect>' +
+      grid +
+      wordPoints +
+      '<path class="sv-loop-trace" d="' +
+      escapeHtml(trajectoryPath || "") +
+      '"></path>' +
+      '<circle class="sv-loop-trace-current" cx="' +
+      String(currentX) +
+      '" cy="' +
+      String(currentY) +
+      '" r="8"></circle>' +
+      '<text class="sv-loop-trace-label" x="' +
+      String(currentX + 10) +
+      '" y="' +
+      String(currentY + 18) +
+      '">standard vector</text>' +
+      '<text class="embedding-axis-label" x="' +
+      String(margin.left + plotWidth * 0.5) +
+      '" y="' +
+      String(height - 14) +
+      '">embedding dimension 1</text>' +
+      '<text class="embedding-axis-label" transform="rotate(-90 24 ' +
+      String(margin.top + plotHeight * 0.5) +
+      ')" x="24" y="' +
+      String(margin.top + plotHeight * 0.5) +
+      '" dominant-baseline="middle">embedding dimension 2</text>';
+  }
+
+
+
+  function setupIterativePaperSelectionWorkbench(root, dataset) {
+    const slider = root.querySelector("#iterative-step-slider");
+    const playBtn = root.querySelector("#iterative-play-btn");
+    const resetBtn = root.querySelector("#iterative-reset-btn");
+    const stepLabel = root.querySelector("#iterative-step-label");
+    const statusChip = root.querySelector("#iterative-status-chip");
+    const corpusMap = root.querySelector("#iterative-corpus-map");
+    const similarityMap = root.querySelector("#iterative-similarity-map");
+    const convergenceMap = root.querySelector("#iterative-convergence-map");
+
+    if (!slider || !playBtn || !resetBtn || !stepLabel || !statusChip || !corpusMap || !similarityMap || !convergenceMap) {
+      return;
+    }
+
+    const state = {
+      stepIndex: 0,
+      timerId: 0
+    };
+    const maxStep = Math.max(0, dataset.iterations.length - 1);
+
+    function stopPlayback() {
+      if (state.timerId) {
+        window.clearInterval(state.timerId);
+        state.timerId = 0;
+      }
+      playBtn.textContent = "Play";
+    }
+
+    function startPlayback() {
+      if (state.timerId) {
+        return;
+      }
+      playBtn.textContent = "Pause";
+      state.timerId = window.setInterval(function () {
+        if (!document.body.contains(root)) {
+          stopPlayback();
+          return;
+        }
+
+        if (state.stepIndex >= maxStep) {
+          stopPlayback();
+          return;
+        }
+        state.stepIndex += 1;
+        renderAll();
+      }, 860);
+    }
+
+    function renderAll() {
+      const step = dataset.iterations[state.stepIndex];
+      const stepState = dataset.similarity.states[state.stepIndex];
+      const converged = state.stepIndex >= dataset.convergedStep;
+      const shift = Number(stepState.shift) || 0;
+
+      slider.value = String(state.stepIndex);
+      stepLabel.textContent =
+        "Iteration " +
+        String(state.stepIndex + 1) +
+        " of " +
+        String(maxStep + 1) +
+        " | Selected docs: " +
+        String(step.selectedCount);
+      statusChip.textContent =
+        "Selected: " +
+        String(step.selectedCount) +
+        " docs | Centroid shift: " +
+        shift.toFixed(3) +
+        " | Threshold: 0.03" +
+        (converged ? " | Stopped" : "");
+      statusChip.classList.toggle("is-converged", converged);
+
+      renderIterativeCorpusPlot(corpusMap, dataset, state.stepIndex);
+      renderIterativeSimilarityPlot(similarityMap, dataset, state.stepIndex);
+      renderIterativeConvergencePlot(convergenceMap, dataset, state.stepIndex);
+    }
+
+    slider.addEventListener("input", function () {
+      state.stepIndex = clampNumber(Number(slider.value), 0, maxStep, 0);
+      renderAll();
+    });
+
+    playBtn.addEventListener("click", function () {
+      if (state.timerId) {
+        stopPlayback();
+      } else {
+        startPlayback();
+      }
+    });
+
+    resetBtn.addEventListener("click", function () {
+      stopPlayback();
+      state.stepIndex = 0;
+      renderAll();
+    });
+
+    renderAll();
+  }
+
+  function renderIterativeCorpusPlot(svg, dataset, stepIndex) {
+    const width = 760;
+    const height = 420;
+    const margin = { left: 54, right: 20, top: 18, bottom: 42 };
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+    const bounds = dataset.corpusBounds;
+    const step = dataset.iterations[stepIndex];
+    const selectedIndices = step.selectedIndices;
+    const newBatchIndices = step.newBatchIndices;
+
+    function scaleX(value) {
+      const normalized = (value - bounds.minX) / Math.max(1e-9, bounds.maxX - bounds.minX);
+      return margin.left + normalized * plotWidth;
+    }
+
+    function scaleY(value) {
+      const normalized = (value - bounds.minY) / Math.max(1e-9, bounds.maxY - bounds.minY);
+      return margin.top + (1 - normalized) * plotHeight;
+    }
+
+    let grid = "";
+    for (let i = 0; i <= 6; i += 1) {
+      const x = margin.left + (plotWidth / 6) * i;
+      const y = margin.top + (plotHeight / 6) * i;
+      grid += '<line x1="' + String(x) + '" y1="' + String(margin.top) + '" x2="' + String(x) + '" y2="' + String(height - margin.bottom) + '" class="embedding-grid-line"/>';
+      grid += '<line x1="' + String(margin.left) + '" y1="' + String(y) + '" x2="' + String(width - margin.right) + '" y2="' + String(y) + '" class="embedding-grid-line"/>';
+    }
+
+    const allPoints = dataset.docs
+      .map(function (point) {
+        return '<circle class="iterative-doc-point all" cx="' + String(scaleX(point.x)) + '" cy="' + String(scaleY(point.y)) + '" r="2.3"></circle>';
+      })
+      .join("");
+
+    const selectedPoints = selectedIndices
+      .map(function (index) {
+        const point = dataset.docs[index];
+        if (!point) {
+          return "";
+        }
+        return '<circle class="iterative-doc-point selected" cx="' + String(scaleX(point.x)) + '" cy="' + String(scaleY(point.y)) + '" r="3.1"></circle>';
+      })
+      .join("");
+
+    const newBatchPoints = newBatchIndices
+      .map(function (index) {
+        const point = dataset.docs[index];
+        if (!point) {
+          return "";
+        }
+        return '<circle class="iterative-doc-point new" cx="' + String(scaleX(point.x)) + '" cy="' + String(scaleY(point.y)) + '" r="4"></circle>';
+      })
+      .join("");
+
+    const hullData = computeConvexHull(
+      selectedIndices.map(function (index) {
+        const point = dataset.docs[index];
+        return point ? { x: point.x, y: point.y } : null;
+      }).filter(Boolean)
+    );
+    let hull = "";
+    if (hullData.length >= 3) {
+      hull =
+        '<polygon class="iterative-coverage-hull" points="' +
+        hullData
+          .map(function (point) {
+            return String(scaleX(point.x)) + "," + String(scaleY(point.y));
+          })
+          .join(" ") +
+        '"></polygon>';
+    }
+
+    const seed = dataset.docs[dataset.centralIndex];
+    const seedX = scaleX(seed.x);
+    const seedY = scaleY(seed.y);
+    const seedStar =
+      '<path class="iterative-seed-star" d="' +
+      escapeHtml(buildStarPath(seedX, seedY, 9, 4.3, 5)) +
+      '"></path>';
+
+    svg.innerHTML =
+      '<rect x="' +
+      String(margin.left) +
+      '" y="' +
+      String(margin.top) +
+      '" width="' +
+      String(plotWidth) +
+      '" height="' +
+      String(plotHeight) +
+      '" class="embedding-map-bg"></rect>' +
+      grid +
+      hull +
+      allPoints +
+      selectedPoints +
+      newBatchPoints +
+      seedStar +
+      '<text class="embedding-axis-label" x="' +
+      String(margin.left + 10) +
+      '" y="' +
+      String(margin.top + 15) +
+      '" text-anchor="start">Greedy farthest selection progression</text>' +
+      '<text class="embedding-axis-label" x="' +
+      String(margin.left + plotWidth / 2) +
+      '" y="' +
+      String(height - 12) +
+      '">PCA Axis 1</text>' +
+      '<text class="embedding-axis-label embedding-axis-label-y" x="16" y="' +
+      String(margin.top + plotHeight / 2) +
+      '">PCA Axis 2</text>';
+  }
+
+  function renderIterativeSimilarityPlot(svg, dataset, stepIndex) {
+    const width = 700;
+    const height = 360;
+    const margin = { left: 66, right: 20, top: 24, bottom: 42 };
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+    const bounds = dataset.similarityBounds;
+    const states = dataset.similarity.states;
+    const stepState = states[stepIndex];
+    const pathStates = states.slice(0, stepIndex + 1);
+
+    function scaleX(value) {
+      const normalized = (value - bounds.minX) / Math.max(1e-9, bounds.maxX - bounds.minX);
+      return margin.left + normalized * plotWidth;
+    }
+
+    function scaleY(value) {
+      const normalized = (value - bounds.minY) / Math.max(1e-9, bounds.maxY - bounds.minY);
+      return margin.top + (1 - normalized) * plotHeight;
+    }
+
+    let grid = "";
+    for (let i = 0; i <= 6; i += 1) {
+      const x = margin.left + (plotWidth / 6) * i;
+      const y = margin.top + (plotHeight / 6) * i;
+      grid += '<line x1="' + String(x) + '" y1="' + String(margin.top) + '" x2="' + String(x) + '" y2="' + String(height - margin.bottom) + '" class="embedding-grid-line"/>';
+      grid += '<line x1="' + String(margin.left) + '" y1="' + String(y) + '" x2="' + String(width - margin.right) + '" y2="' + String(y) + '" class="embedding-grid-line"/>';
+    }
+
+    const points = stepState.points
+      .map(function (point) {
+        return (
+          '<circle class="iterative-sim-point" cx="' +
+          String(scaleX(point.simDielectric)) +
+          '" cy="' +
+          String(scaleY(point.simConductivity)) +
+          '" r="2.4"></circle>'
+        );
+      })
+      .join("");
+
+    const centroidPath = pathStates
+      .map(function (entry) {
+        return String(scaleX(entry.centroid.simDielectric)) + "," + String(scaleY(entry.centroid.simConductivity));
+      })
+      .join(" ");
+    const centroidNow = stepState.centroid;
+
+    svg.innerHTML =
+      '<rect x="' +
+      String(margin.left) +
+      '" y="' +
+      String(margin.top) +
+      '" width="' +
+      String(plotWidth) +
+      '" height="' +
+      String(plotHeight) +
+      '" class="embedding-map-bg"></rect>' +
+      grid +
+      points +
+      '<polyline class="iterative-centroid-path" points="' +
+      escapeHtml(centroidPath) +
+      '"></polyline>' +
+      '<circle class="iterative-centroid-point" cx="' +
+      String(scaleX(centroidNow.simDielectric)) +
+      '" cy="' +
+      String(scaleY(centroidNow.simConductivity)) +
+      '" r="6.8"></circle>' +
+      '<text class="embedding-axis-label" x="' +
+      String(margin.left + plotWidth / 2) +
+      '" y="' +
+      String(height - 12) +
+      '">S_dielectric</text>' +
+      '<text class="embedding-axis-label" x="30" y="' +
+      String(margin.top + plotHeight / 2) +
+      '" transform="rotate(-90 30 ' +
+      String(margin.top + plotHeight / 2) +
+      ')" style="text-anchor:middle;">S_conductivity</text>';
+  }
+
+  function renderIterativeConvergencePlot(svg, dataset, stepIndex) {
+    const width = 700;
+    const height = 280;
+    const margin = { left: 66, right: 20, top: 20, bottom: 40 };
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+    const threshold = dataset.threshold;
+    const states = dataset.similarity.states;
+    const shifts = states.map(function (entry) {
+      return Number(entry.shift) || 0;
+    });
+    const xMax = dataset.iterations[dataset.iterations.length - 1].selectedCount;
+    const yMax = Math.max(
+      threshold * 1.8,
+      shifts.reduce(function (maxValue, value) {
+        return Math.max(maxValue, value);
+      }, 0),
+      0.08
+    );
+
+    function scaleX(value) {
+      const normalized = value / Math.max(1, xMax);
+      return margin.left + normalized * plotWidth;
+    }
+
+    function scaleY(value) {
+      const normalized = value / Math.max(1e-9, yMax);
+      return margin.top + (1 - normalized) * plotHeight;
+    }
+
+    let grid = "";
+    for (let i = 0; i <= 5; i += 1) {
+      const y = margin.top + (plotHeight / 5) * i;
+      grid += '<line x1="' + String(margin.left) + '" y1="' + String(y) + '" x2="' + String(width - margin.right) + '" y2="' + String(y) + '" class="embedding-grid-line"/>';
+    }
+
+    const pathPoints = states
+      .slice(0, stepIndex + 1)
+      .map(function (entry, index) {
+        const docs = dataset.iterations[index].selectedCount;
+        return String(scaleX(docs)) + "," + String(scaleY(entry.shift));
+      })
+      .join(" ");
+    const curvePoints = states
+      .map(function (entry, index) {
+        if (index > stepIndex) {
+          return "";
+        }
+        const docs = dataset.iterations[index].selectedCount;
+        return '<circle class="iterative-conv-point" cx="' + String(scaleX(docs)) + '" cy="' + String(scaleY(entry.shift)) + '" r="2.7"></circle>';
+      })
+      .join("");
+
+    const currentState = states[stepIndex];
+    const currentDocs = dataset.iterations[stepIndex].selectedCount;
+    const convergedStep = dataset.convergedStep;
+    let convergedLabel = "";
+    if (convergedStep > 0 && stepIndex >= convergedStep) {
+      const convDocs = dataset.iterations[convergedStep].selectedCount;
+      const convShift = states[convergedStep].shift;
+      convergedLabel =
+        '<text class="iterative-conv-label" x="' +
+        String(Math.min(width - margin.right - 92, scaleX(convDocs) + 8)) +
+        '" y="' +
+        String(Math.max(margin.top + 14, scaleY(convShift) - 10)) +
+        '">CONVERGED</text>';
+    }
+
+    svg.innerHTML =
+      '<rect x="' +
+      String(margin.left) +
+      '" y="' +
+      String(margin.top) +
+      '" width="' +
+      String(plotWidth) +
+      '" height="' +
+      String(plotHeight) +
+      '" class="embedding-map-bg"></rect>' +
+      grid +
+      '<line class="iterative-threshold-line" x1="' +
+      String(margin.left) +
+      '" y1="' +
+      String(scaleY(threshold)) +
+      '" x2="' +
+      String(width - margin.right) +
+      '" y2="' +
+      String(scaleY(threshold)) +
+      '"></line>' +
+      '<polyline class="iterative-conv-path" points="' +
+      escapeHtml(pathPoints) +
+      '"></polyline>' +
+      curvePoints +
+      '<circle class="iterative-conv-current" cx="' +
+      String(scaleX(currentDocs)) +
+      '" cy="' +
+      String(scaleY(currentState.shift)) +
+      '" r="5.2"></circle>' +
+      convergedLabel +
+      '<text class="embedding-axis-label iterative-threshold-label" x="' +
+      String(width - margin.right - 22) +
+      '" y="' +
+      String(Math.max(margin.top + 16, scaleY(threshold) - 7)) +
+      '">threshold = 0.03</text>' +
+      '<text class="embedding-axis-label" x="' +
+      String(margin.left + plotWidth / 2) +
+      '" y="' +
+      String(height - 10) +
+      '">Selected documents</text>' +
+      '<text class="embedding-axis-label" x="30" y="' +
+      String(margin.top + plotHeight / 2) +
+      '" transform="rotate(-90 30 ' +
+      String(margin.top + plotHeight / 2) +
+      ')" style="text-anchor:middle;">Centroid shift</text>';
+  }
+
+  function buildIterativePaperDemoDataset() {
+    if (window.__iterativePaperDemoDataset) {
+      return window.__iterativePaperDemoDataset;
+    }
+
+    const random = createSeededRandom(90261);
+    const docCount = 1000;
+    const batchSize = 50;
+    const rawDocs = [];
+    const clusters = [
+      { x: -2.4, y: -1.7, spreadX: 0.72, spreadY: 0.64, weight: 0.24 },
+      { x: -1.2, y: 1.8, spreadX: 0.74, spreadY: 0.6, weight: 0.22 },
+      { x: 1.45, y: -1.1, spreadX: 0.68, spreadY: 0.72, weight: 0.26 },
+      { x: 2.15, y: 1.55, spreadX: 0.62, spreadY: 0.64, weight: 0.18 },
+      { x: 0.15, y: 0.2, spreadX: 0.94, spreadY: 0.94, weight: 0.1 }
+    ];
+    const clusterCdf = [];
+    let weightAcc = 0;
+    clusters.forEach(function (entry) {
+      weightAcc += entry.weight;
+      clusterCdf.push(weightAcc);
+    });
+
+    for (let i = 0; i < docCount; i += 1) {
+      const r = random();
+      let clusterIndex = clusterCdf.length - 1;
+      for (let j = 0; j < clusterCdf.length; j += 1) {
+        if (r <= clusterCdf[j]) {
+          clusterIndex = j;
+          break;
+        }
+      }
+      const cluster = clusters[clusterIndex];
+      rawDocs.push({
+        x: cluster.x + sampleNormal(random) * cluster.spreadX,
+        y: cluster.y + sampleNormal(random) * cluster.spreadY
+      });
+    }
+
+    const normalizedDocs = normalizePoints2d(rawDocs);
+    const mean = computeAveragePoint(normalizedDocs);
+    let centralIndex = 0;
+    let centralDistance = Infinity;
+    normalizedDocs.forEach(function (point, index) {
+      const dist = squaredDistance2d(point, mean);
+      if (dist < centralDistance) {
+        centralDistance = dist;
+        centralIndex = index;
+      }
+    });
+
+    const order = buildGreedyFarthestSelectionOrder(normalizedDocs, centralIndex);
+    const iterationCount = Math.ceil(docCount / batchSize);
+    const iterations = [];
+    for (let step = 0; step < iterationCount; step += 1) {
+      const selectedCount = Math.min(docCount, (step + 1) * batchSize);
+      const prevCount = step === 0 ? 0 : Math.min(docCount, step * batchSize);
+      const selectedIndices = order.slice(0, selectedCount);
+      const newBatchIndices = order.slice(prevCount, selectedCount);
+      const centroid = computeAveragePoint(
+        selectedIndices.map(function (index) {
+          return normalizedDocs[index];
+        })
+      );
+      iterations.push({
+        selectedCount: selectedCount,
+        selectedIndices: selectedIndices,
+        newBatchIndices: newBatchIndices,
+        docCentroid: centroid
+      });
+    }
+
+    const compositions = [];
+    const compositionCount = 520;
+    for (let i = 0; i < compositionCount; i += 1) {
+      const angle = (Math.PI * 2 * i) / compositionCount + random() * 0.12;
+      const radius = 0.2 + 0.82 * Math.sqrt(random());
+      const baseDielectric = clampNumber(radius * Math.cos(angle) + sampleNormal(random) * 0.08, -1.15, 1.15, 0);
+      const baseConductivity = clampNumber(radius * Math.sin(angle) + sampleNormal(random) * 0.08, -1.15, 1.15, 0);
+      compositions.push({
+        id: "Comp-" + String(i + 1).padStart(3, "0"),
+        baseDielectric: baseDielectric,
+        baseConductivity: baseConductivity,
+        dirX: Math.cos(angle * 1.7 + 0.2),
+        dirY: Math.sin(angle * 1.7 + 0.2),
+        phaseA: random() * Math.PI * 2,
+        phaseB: random() * Math.PI * 2
+      });
+    }
+
+    const threshold = 0.03;
+    const similarity = buildSimilarityStates(iterations, compositions, threshold);
+    const stopStep = Math.max(1, similarity.convergedStep >= 0 ? similarity.convergedStep : iterations.length - 1);
+    const trimmedIterations = iterations.slice(0, stopStep + 1);
+    const trimmedStates = similarity.states.slice(0, stopStep + 1);
+
+    window.__iterativePaperDemoDataset = {
+      docs: normalizedDocs,
+      centralIndex: centralIndex,
+      order: order,
+      batchSize: batchSize,
+      iterations: trimmedIterations,
+      threshold: threshold,
+      convergedStep: stopStep,
+      similarity: {
+        states: trimmedStates
+      },
+      corpusBounds: {
+        minX: -1.08,
+        maxX: 1.08,
+        minY: -1.08,
+        maxY: 1.08
+      },
+      similarityBounds: {
+        minX: -1.15,
+        maxX: 1.15,
+        minY: -1.15,
+        maxY: 1.15
+      }
+    };
+
+    return window.__iterativePaperDemoDataset;
+  }
+
+  function buildSimilarityStates(iterations, compositions, threshold) {
+    const states = [];
+    let prevCentroid = { simDielectric: -0.52, simConductivity: 0.56 };
+
+    for (let step = 0; step < iterations.length; step += 1) {
+      const centroidDoc = iterations[step].docCentroid || { x: 0, y: 0 };
+      const decay = Math.exp(-step / 5.1);
+      const swingX = Math.cos(step * 0.82 + 0.35) * 0.11 * decay;
+      const swingY = Math.sin(step * 0.78 + 0.28) * 0.105 * decay;
+      const centroid = {
+        simDielectric: clampNumber(-0.12 + centroidDoc.x * 0.18 + swingX, -0.9, 0.9, 0),
+        simConductivity: clampNumber(0.16 + centroidDoc.y * 0.16 + swingY, -0.9, 0.9, 0)
+      };
+
+      const jitterScale = 0.09 * Math.exp(-step / 5.2);
+      let sumX = 0;
+      let sumY = 0;
+      const points = compositions.map(function (comp, index) {
+        const waveX = Math.sin(comp.phaseA + step * 0.66 + index * 0.003);
+        const waveY = Math.cos(comp.phaseB + step * 0.64 + index * 0.003);
+        const simDielectric = clampNumber(comp.baseDielectric * 0.88 + centroid.simDielectric + comp.dirX * jitterScale + waveX * jitterScale * 0.24, -1.15, 1.15, 0);
+        const simConductivity = clampNumber(comp.baseConductivity * 0.88 + centroid.simConductivity + comp.dirY * jitterScale + waveY * jitterScale * 0.24, -1.15, 1.15, 0);
+        sumX += simDielectric;
+        sumY += simConductivity;
+        return {
+          id: comp.id,
+          simDielectric: simDielectric,
+          simConductivity: simConductivity
+        };
+      });
+
+      const centroidActual = {
+        simDielectric: sumX / Math.max(1, points.length),
+        simConductivity: sumY / Math.max(1, points.length)
+      };
+      const shift = Math.sqrt(
+        Math.pow(centroidActual.simDielectric - prevCentroid.simDielectric, 2) +
+          Math.pow(centroidActual.simConductivity - prevCentroid.simConductivity, 2)
+      );
+
+      states.push({
+        points: points,
+        centroid: centroidActual,
+        shift: shift
+      });
+      prevCentroid = centroidActual;
+    }
+
+    let convergedStep = -1;
+    for (let i = 0; i < states.length; i += 1) {
+      if (states[i].shift <= threshold) {
+        convergedStep = i;
+        break;
+      }
+    }
+
+    return {
+      states: states,
+      convergedStep: convergedStep
+    };
+  }
+
+  function buildGreedyFarthestSelectionOrder(points, startIndex) {
+    const n = points.length;
+    if (!n) {
+      return [];
+    }
+
+    const selected = new Array(n).fill(false);
+    const minDistSq = new Array(n).fill(Infinity);
+    const order = [];
+    const seed = clampNumber(startIndex, 0, n - 1, 0);
+    selected[seed] = true;
+    order.push(seed);
+
+    for (let i = 0; i < n; i += 1) {
+      if (i === seed) {
+        continue;
+      }
+      minDistSq[i] = squaredDistance2d(points[i], points[seed]);
+    }
+
+    while (order.length < n) {
+      let farthestIndex = -1;
+      let farthestDist = -1;
+      for (let i = 0; i < n; i += 1) {
+        if (selected[i]) {
+          continue;
+        }
+        if (minDistSq[i] > farthestDist) {
+          farthestDist = minDistSq[i];
+          farthestIndex = i;
+        }
+      }
+      if (farthestIndex < 0) {
+        break;
+      }
+      selected[farthestIndex] = true;
+      order.push(farthestIndex);
+      for (let i = 0; i < n; i += 1) {
+        if (selected[i]) {
+          continue;
+        }
+        const dist = squaredDistance2d(points[i], points[farthestIndex]);
+        if (dist < minDistSq[i]) {
+          minDistSq[i] = dist;
+        }
+      }
+    }
+
+    return order;
+  }
+
+  function normalizePoints2d(points) {
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    points.forEach(function (point) {
+      minX = Math.min(minX, point.x);
+      maxX = Math.max(maxX, point.x);
+      minY = Math.min(minY, point.y);
+      maxY = Math.max(maxY, point.y);
+    });
+
+    const spanX = Math.max(1e-9, maxX - minX);
+    const spanY = Math.max(1e-9, maxY - minY);
+    return points.map(function (point) {
+      return {
+        x: ((point.x - minX) / spanX) * 2 - 1,
+        y: ((point.y - minY) / spanY) * 2 - 1
+      };
+    });
+  }
+
+  function computeAveragePoint(points) {
+    if (!points || !points.length) {
+      return { x: 0, y: 0 };
+    }
+    let sumX = 0;
+    let sumY = 0;
+    points.forEach(function (point) {
+      sumX += Number(point.x) || 0;
+      sumY += Number(point.y) || 0;
+    });
+    return {
+      x: sumX / points.length,
+      y: sumY / points.length
+    };
+  }
+
+  function squaredDistance2d(a, b) {
+    const dx = (Number(a.x) || 0) - (Number(b.x) || 0);
+    const dy = (Number(a.y) || 0) - (Number(b.y) || 0);
+    return dx * dx + dy * dy;
+  }
+
+  function computeConvexHull(points) {
+    if (!points || points.length < 3) {
+      return points || [];
+    }
+    const sorted = points
+      .slice()
+      .sort(function (left, right) {
+        if (left.x !== right.x) {
+          return left.x - right.x;
+        }
+        return left.y - right.y;
+      });
+
+    function cross(origin, a, b) {
+      return (a.x - origin.x) * (b.y - origin.y) - (a.y - origin.y) * (b.x - origin.x);
+    }
+
+    const lower = [];
+    sorted.forEach(function (point) {
+      while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], point) <= 0) {
+        lower.pop();
+      }
+      lower.push(point);
+    });
+
+    const upper = [];
+    for (let i = sorted.length - 1; i >= 0; i -= 1) {
+      const point = sorted[i];
+      while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], point) <= 0) {
+        upper.pop();
+      }
+      upper.push(point);
+    }
+
+    lower.pop();
+    upper.pop();
+    return lower.concat(upper);
+  }
+
+  function buildStarPath(cx, cy, outerRadius, innerRadius, spikes) {
+    const count = Math.max(3, Math.floor(spikes || 5));
+    const step = Math.PI / count;
+    let rotation = -Math.PI / 2;
+    let path = "";
+    for (let i = 0; i < count; i += 1) {
+      const outerX = cx + Math.cos(rotation) * outerRadius;
+      const outerY = cy + Math.sin(rotation) * outerRadius;
+      const innerX = cx + Math.cos(rotation + step) * innerRadius;
+      const innerY = cy + Math.sin(rotation + step) * innerRadius;
+      if (!i) {
+        path += "M" + String(outerX) + "," + String(outerY);
+      } else {
+        path += " L" + String(outerX) + "," + String(outerY);
+      }
+      path += " L" + String(innerX) + "," + String(innerY);
+      rotation += step * 2;
+    }
+    path += " Z";
+    return path;
+  }
+
+  function createSeededRandom(seed) {
+    let state = (Number(seed) || 1) >>> 0;
+    return function () {
+      state = (state * 1664525 + 1013904223) >>> 0;
+      return state / 4294967296;
+    };
+  }
+
+  function sampleNormal(random) {
+    let u = 0;
+    let v = 0;
+    while (u <= 1e-12) {
+      u = random();
+    }
+    while (v <= 1e-12) {
+      v = random();
+    }
+    return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
   }
 
   function setupParetoFrontWorkbench(root, dataset) {
@@ -3033,6 +4926,8 @@
       if (pageKey === "projects") {
         const embeddingTabHref = href + "?subtab=word-embedding-demo";
         const paretoTabHref = href + "?subtab=pareto-front-demo";
+        const iterativeTabHref = href + "?subtab=iterative-paper-selection-demo";
+        const standardTabHref = href + "?subtab=standard-vector-demo";
         entries.push({
           title: "Demo Instructions",
           subtitle: navItem.label,
@@ -3098,6 +4993,54 @@
           subtitle: navItem.label,
           href: paretoTabHref + "#pareto-front-summary",
           searchable: "pareto selected materials conductivity dielectric optimization".toLowerCase()
+        });
+        entries.push({
+          title: "Iterative Demo Instructions",
+          subtitle: navItem.label,
+          href: iterativeTabHref + "#iterative-how-to",
+          searchable: "iterative paper selection demo instructions".toLowerCase()
+        });
+        entries.push({
+          title: "Iteration Controls",
+          subtitle: navItem.label,
+          href: iterativeTabHref + "#iterative-controls",
+          searchable: "slider play pause reset selected docs centroid shift converged".toLowerCase()
+        });
+        entries.push({
+          title: "Corpus Selection Plot",
+          subtitle: navItem.label,
+          href: iterativeTabHref + "#iterative-corpus-plot",
+          searchable: "doc2vec pca scatter corpus embedding greedy farthest selection".toLowerCase()
+        });
+        entries.push({
+          title: "Similarity Trajectory Plot",
+          subtitle: navItem.label,
+          href: iterativeTabHref + "#iterative-similarity-plot",
+          searchable: "similarity space centroid trajectory".toLowerCase()
+        });
+        entries.push({
+          title: "Convergence Plot",
+          subtitle: navItem.label,
+          href: iterativeTabHref + "#iterative-convergence-plot",
+          searchable: "centroid shift convergence threshold 0.03".toLowerCase()
+        });
+        entries.push({
+          title: "Standard Vector Instructions",
+          subtitle: navItem.label,
+          href: standardTabHref + "#sv-loop-how-to",
+          searchable: "standard vector training loop instructions play button".toLowerCase()
+        });
+        entries.push({
+          title: "Training Flow Plot",
+          subtitle: navItem.label,
+          href: standardTabHref + "#sv-loop-flow-panel",
+          searchable: "training set property words target set weights feedback loop".toLowerCase()
+        });
+        entries.push({
+          title: "Embedding Trajectory Plot",
+          subtitle: navItem.label,
+          href: standardTabHref + "#sv-loop-embedding-panel",
+          searchable: "property word embedding distribution standard vector trajectory".toLowerCase()
         });
       }
     });

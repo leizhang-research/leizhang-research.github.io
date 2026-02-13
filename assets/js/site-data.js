@@ -78,7 +78,8 @@ window.SITE_DATA = {
           kind: "published",
           year: 2025,
           links: [
-            { label: "DOI", href: "https://doi.org/10.1039/D5DD00169B" }
+            { label: "DOI", href: "https://doi.org/10.1039/D5DD00169B" },
+            { label: "Demo", href: "projects.html?subtab=standard-vector-demo" }
           ]
         },
         {
@@ -88,7 +89,8 @@ window.SITE_DATA = {
           kind: "published",
           year: 2025,
           links: [
-            { label: "DOI", href: "https://doi.org/10.1007/978-3-032-06118-8_6" }
+            { label: "DOI", href: "https://doi.org/10.1007/978-3-032-06118-8_6" },
+            { label: "Demo", href: "projects.html?subtab=iterative-paper-selection-demo" }
           ]
         },
         {
@@ -98,7 +100,8 @@ window.SITE_DATA = {
           kind: "preprint",
           year: 2025,
           links: [
-            { label: "arXiv", href: "https://arxiv.org/abs/2502.20860" }
+            { label: "arXiv", href: "https://arxiv.org/abs/2502.20860" },
+            { label: "Demo", href: "projects.html?subtab=pareto-front-demo" }
           ]
         },
         {
@@ -109,7 +112,8 @@ window.SITE_DATA = {
           year: 2024,
           description: "Introduces MatNexus for automated text mining and analysis in materials discovery.",
           links: [
-            { label: "DOI", href: "https://doi.org/10.1016/j.softx.2024.101654" }
+            { label: "DOI", href: "https://doi.org/10.1016/j.softx.2024.101654" },
+            { label: "Demo", href: "projects.html?subtab=word-embedding-demo" }
           ]
         },
         {
@@ -352,14 +356,44 @@ window.SITE_DATA = {
           label: "Word Embedding Demo",
           type: "embedding-workbench",
           title: "Element Embedding Workbench",
-          description: "Build a composite by selecting periodic-table elements and relative amounts. The workbench computes a weighted composite embedding, projects it into 2D (PCA), and compares it with property-word embeddings using cosine similarity."
+          description: "Based on MatNexus, this demo builds a weighted composite embedding from selected elements and compares it with property-word embeddings in 2D. It shows how text-derived latent knowledge can support fast materials hypotheses before expensive lab screening.",
+          paper: {
+            title: "MatNexus: A comprehensive text mining and analysis suite for materials discovery",
+            href: "https://doi.org/10.1016/j.softx.2024.101654"
+          }
         },
         {
           key: "pareto-front-demo",
           label: "Pareto Front Demo",
           type: "pareto-front-workbench",
           title: "Ternary Composite Pareto Workbench",
-          description: "Select exactly three periodic-table elements, generate all integer ternary composites summing to 100, compute cosine similarity to conductivity/dielectric embeddings, and highlight Pareto-optimal candidates for both optimization directions."
+          description: "This demo reflects text-mining-driven multi-objective electrocatalyst discovery: it ranks ternary candidates by embedding-based conductivity/dielectric objectives and returns Pareto fronts. Instead of experimentally testing every candidate, you can prioritize a short prediction list and save time and resources, even without direct experimental input at this screening stage.",
+          paper: {
+            title: "Electrocatalyst discovery through text mining and multi-objective optimization",
+            href: "https://arxiv.org/abs/2502.20860"
+          }
+        },
+        {
+          key: "iterative-paper-selection-demo",
+          label: "Iterative Paper Selection Demo",
+          type: "iterative-paper-selection-demo",
+          title: "Iterative Corpus Selection and Convergence",
+          description: "Not all papers are equally useful for building reliable embeddings. This demo shows iterative corpus refinement that selectively adds informative papers, improving embedding coverage and stabilizing property-prediction behavior.",
+          paper: {
+            title: "Iterative Corpus Refinement for Materials Property Prediction Based on Scientific Texts",
+            href: "https://doi.org/10.1007/978-3-032-06118-8_6"
+          }
+        },
+        {
+          key: "standard-vector-demo",
+          label: "Standard Vector Demo",
+          type: "standard-vector-demo",
+          title: "Standard Vector Training Loop",
+          description: "This demo shows how word-embedding knowledge can complement limited experimental data: adaptive property weights create a standard vector from training evidence, then candidate composition embeddings are ranked by similarity to prioritize promising extrapolation targets.",
+          paper: {
+            title: "Composition-property extrapolation for compositionally complex solid solutions based on word embeddings",
+            href: "https://doi.org/10.1039/D5DD00169B"
+          }
         }
       ]
     },
