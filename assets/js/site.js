@@ -598,14 +598,16 @@
       introHtml +
       '<div class="iterative-demo-layout">' +
       '<article id="iterative-corpus-plot" class="item-card soft embedding-card iterative-main-card">' +
-      '<h3 class="embedding-card-title">Corpus Embedding + Selection (Main)</h3>' +
+      '<h3 class="embedding-card-title">Corpus Embedding + Selection</h3>' +
       '<p class="embedding-hint">Gray: full synthetic corpus. Blue: selected papers. Bright blue: newly added batch. Star: initial central paper.</p>' +
       '<div id="iterative-controls" class="iterative-inline-controls">' +
       '<div class="iterative-controls-row">' +
       '<label class="iterative-slider-label" for="iterative-step-slider">Corpus size / iteration</label>' +
       '<input id="iterative-step-slider" class="iterative-step-slider" type="range" min="0" max="' +
       String(stepMax) +
-      '" step="1" value="0">' +
+      '" step="1" value="0" style="--range-min:0;--range-max:' +
+      String(Math.max(stepMax, 1)) +
+      ';--range-value:0;">' +
       '<div class="iterative-control-actions">' +
       '<button type="button" class="pareto-analyze-btn" id="iterative-play-btn">Play</button>' +
       '<button type="button" class="older-toggle-btn" id="iterative-reset-btn">Reset</button>' +
@@ -1714,6 +1716,7 @@
       const shift = Number(stepState.shift) || 0;
 
       slider.value = String(state.stepIndex);
+      slider.style.setProperty("--range-value", String(state.stepIndex));
       stepLabel.textContent =
         "Iteration " +
         String(state.stepIndex + 1) +
@@ -2005,16 +2008,26 @@
     const currentState = states[stepIndex];
     const currentDocs = dataset.iterations[stepIndex].selectedCount;
     const convergedStep = dataset.convergedStep;
+    const thresholdY = scaleY(threshold);
+    const thresholdLabelX = width - margin.right - 22;
+    const thresholdLabelY = Math.max(margin.top + 16, thresholdY - 7);
     let convergedLabel = "";
     if (convergedStep > 0 && stepIndex >= convergedStep) {
       const convDocs = dataset.iterations[convergedStep].selectedCount;
       const convShift = states[convergedStep].shift;
+      const convX = scaleX(convDocs);
+      const convY = scaleY(convShift);
+      const overlapsThresholdLabel = Math.abs(convY - thresholdLabelY) < 14 && convX > thresholdLabelX - 120;
+      const convLabelX = Math.max(margin.left + 80, convX - 10);
+      const convLabelY = overlapsThresholdLabel
+        ? Math.min(margin.top + plotHeight - 8, convY + 15)
+        : Math.max(margin.top + 14, convY - 10);
       convergedLabel =
         '<text class="iterative-conv-label" x="' +
-        String(Math.min(width - margin.right - 92, scaleX(convDocs) + 8)) +
+        String(convLabelX) +
         '" y="' +
-        String(Math.max(margin.top + 14, scaleY(convShift) - 10)) +
-        '">CONVERGED</text>';
+        String(convLabelY) +
+        '" text-anchor="end">CONVERGED</text>';
     }
 
     svg.innerHTML =
@@ -2048,9 +2061,9 @@
       '" r="5.2"></circle>' +
       convergedLabel +
       '<text class="embedding-axis-label iterative-threshold-label" x="' +
-      String(width - margin.right - 22) +
+      String(thresholdLabelX) +
       '" y="' +
-      String(Math.max(margin.top + 16, scaleY(threshold) - 7)) +
+      String(thresholdLabelY) +
       '">threshold = 0.03</text>' +
       '<text class="embedding-axis-label" x="' +
       String(margin.left + plotWidth / 2) +
@@ -3682,7 +3695,9 @@
           "</span>" +
           '<input class="composition-slider" type="range" min="0" max="100" step="0.5" value="' +
           escapeHtml(value) +
-          '" data-symbol="' +
+          '" style="--range-value:' +
+          escapeHtml(value) +
+          ';" data-symbol="' +
           escapeHtml(entry.symbol) +
           '" data-kind="range">' +
           '<input class="composition-input" type="number" min="0" max="100" step="0.1" value="' +

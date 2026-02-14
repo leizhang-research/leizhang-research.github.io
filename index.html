@@ -12,6 +12,16 @@
   <link rel="stylesheet" href="assets/css/site.css?v={{ site.github.build_revision }}">
 </head>
 <body data-page="bio">
+  <script>
+    (function () {
+      try {
+        if (window.localStorage.getItem("lz-theme") === "dark") {
+          document.body.classList.add("theme-dark");
+        }
+      } catch (error) {
+      }
+    })();
+  </script>
   <div class="shell">
     <header class="top-nav" id="site-nav"></header>
     <main class="content">
