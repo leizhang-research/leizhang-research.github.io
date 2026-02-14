@@ -3796,11 +3796,11 @@ body.theme-dark .sv-spark-bar {
     grid-template-columns: 1fr;
   }
 
-  .embedding-main-column {
+  .embedding-column {
     order: 1;
   }
 
-  .embedding-column {
+  .embedding-main-column {
     order: 2;
   }
 
