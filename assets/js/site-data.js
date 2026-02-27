@@ -360,28 +360,10 @@ window.SITE_DATA = {
           paper: {
             title: "MatNexus: A comprehensive text mining and analysis suite for materials discovery",
             href: "https://doi.org/10.1016/j.softx.2024.101654"
-          }
-        },
-        {
-          key: "pareto-front-demo",
-          label: "Pareto Front Demo",
-          type: "pareto-front-workbench",
-          title: "Ternary Composite Pareto Workbench",
-          description: "This demo reflects text-mining-driven multi-objective electrocatalyst discovery: it ranks ternary candidates by embedding-based conductivity/dielectric objectives and returns Pareto fronts. Instead of experimentally testing every candidate, you can prioritize a short prediction list and save time and resources, even without direct experimental input at this screening stage.",
-          paper: {
-            title: "Electrocatalyst discovery through text mining and multi-objective optimization",
-            href: "https://arxiv.org/abs/2502.20860"
-          }
-        },
-        {
-          key: "iterative-paper-selection-demo",
-          label: "Iterative Paper Selection Demo",
-          type: "iterative-paper-selection-demo",
-          title: "Iterative Corpus Selection and Convergence",
-          description: "Not all papers are equally useful for building reliable embeddings. This demo shows iterative corpus refinement that selectively adds informative papers, improving embedding coverage and stabilizing property-prediction behavior.",
-          paper: {
-            title: "Iterative Corpus Refinement for Materials Property Prediction Based on Scientific Texts",
-            href: "https://doi.org/10.1007/978-3-032-06118-8_6"
+          },
+          repo: {
+            title: "lab-mids/matnexus",
+            href: "https://github.com/lab-mids/matnexus"
           }
         },
         {
@@ -393,6 +375,40 @@ window.SITE_DATA = {
           paper: {
             title: "Composition-property extrapolation for compositionally complex solid solutions based on word embeddings",
             href: "https://doi.org/10.1039/D5DD00169B"
+          },
+          repo: {
+            title: "lab-mids/ccss_word_embedding_prediction",
+            href: "https://github.com/lab-mids/ccss_word_embedding_prediction"
+          }
+        },
+        {
+          key: "pareto-front-demo",
+          label: "Pareto Front Demo",
+          type: "pareto-front-workbench",
+          title: "Ternary Composite Pareto Workbench",
+          description: "This demo reflects text-mining-driven multi-objective electrocatalyst discovery: it ranks ternary candidates by embedding-based conductivity/dielectric objectives and returns Pareto fronts. Instead of experimentally testing every candidate, you can prioritize a short prediction list and save time and resources, even without direct experimental input at this screening stage.",
+          paper: {
+            title: "Electrocatalyst discovery through text mining and multi-objective optimization",
+            href: "https://arxiv.org/abs/2502.20860"
+          },
+          repo: {
+            title: "lab-mids/ccss_word_embedding_prediction",
+            href: "https://github.com/lab-mids/ccss_word_embedding_prediction"
+          }
+        },
+        {
+          key: "iterative-paper-selection-demo",
+          label: "Iterative Paper Selection Demo",
+          type: "iterative-paper-selection-demo",
+          title: "Iterative Corpus Selection and Convergence",
+          description: "Not all papers are equally useful for building reliable embeddings. This demo shows iterative corpus refinement that selectively adds informative papers, improving embedding coverage and stabilizing property-prediction behavior.",
+          paper: {
+            title: "Iterative Corpus Refinement for Materials Property Prediction Based on Scientific Texts",
+            href: "https://doi.org/10.1007/978-3-032-06118-8_6"
+          },
+          repo: {
+            title: "lab-mids/word_embedding_paper_selection",
+            href: "https://github.com/lab-mids/word_embedding_paper_selection"
           }
         }
       ]

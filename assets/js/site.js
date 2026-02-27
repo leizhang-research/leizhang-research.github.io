@@ -368,25 +368,46 @@
 
   function renderDemoPaperReference(section) {
     const paper = section && section.paper;
-    if (!paper || !paper.href) {
+    const repo = section && section.repo;
+    const links = [];
+
+    if (paper && paper.href) {
+      const paperHref = escapeHtml(paper.href);
+      const paperTitle = escapeHtml(paper.title || "Related paper");
+      const paperExternal = /^https?:\/\//.test(paper.href || "");
+      const paperAttrs = paperExternal ? ' target="_blank" rel="noopener noreferrer"' : "";
+      links.push(
+        '<a class="card-link" href="' +
+          paperHref +
+          '"' +
+          paperAttrs +
+          ">Paper: " +
+          paperTitle +
+          "</a>"
+      );
+    }
+
+    if (repo && repo.href) {
+      const repoHref = escapeHtml(repo.href);
+      const repoTitle = escapeHtml(repo.title || "GitHub Repository");
+      const repoExternal = /^https?:\/\//.test(repo.href || "");
+      const repoAttrs = repoExternal ? ' target="_blank" rel="noopener noreferrer"' : "";
+      links.push(
+        '<a class="card-link" href="' +
+          repoHref +
+          '"' +
+          repoAttrs +
+          ">Repo: " +
+          repoTitle +
+          "</a>"
+      );
+    }
+
+    if (!links.length) {
       return "";
     }
 
-    const href = escapeHtml(paper.href);
-    const title = escapeHtml(paper.title || "Related paper");
-    const external = /^https?:\/\//.test(paper.href || "");
-    const attrs = external ? ' target="_blank" rel="noopener noreferrer"' : "";
-    return (
-      '<div class="card-links demo-paper-links">' +
-      '<a class="card-link" href="' +
-      href +
-      '"' +
-      attrs +
-      ">Paper: " +
-      title +
-      "</a>" +
-      "</div>"
-    );
+    return '<div class="card-links demo-paper-links">' + links.join("") + "</div>";
   }
 
   function renderEmbeddingDemo(root, section, currentPage, options) {
