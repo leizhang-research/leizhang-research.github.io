@@ -392,8 +392,8 @@ window.SITE_DATA = {
             href: "https://arxiv.org/abs/2502.20860"
           },
           repo: {
-            title: "lab-mids/ccss_word_embedding_prediction",
-            href: "https://github.com/lab-mids/ccss_word_embedding_prediction"
+            title: "lab-mids/word_embedding_pareto_front",
+            href: "https://github.com/lab-mids/word_embedding_pareto_front"
           }
         },
         {
